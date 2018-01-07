@@ -82,8 +82,8 @@ def decode_frame(frame):
             f = _decode_beacon(frame)
         else:
             raise IllegalFrameException
-    except IndexError, e:
-        print "Index error"
+    except IndexError as e:
+        print("Index error")
         raise IllegalFrameException
     return f
 

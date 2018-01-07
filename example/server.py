@@ -28,7 +28,7 @@ def open_socket(port):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.bind(("", port))
-        except socket.error, e:
+        except socket.error as e:
             logger.info("Socket in use")
     return s
 
@@ -42,9 +42,9 @@ def service_thread():
                 data, addr = sock.recvfrom(1024)
                 port = addr[1]
                 addr = addr[0]
-                logger.info("Got message: '%s' from %s" % (data, addr))
-            except socket.error, e:
-                print "sock error", e
+                logger.info("Got message: '%s' from %s" % (data.decode("utf-8"), addr))
+            except socket.error as e:
+                print("sock error"), e
 
 
 thread = threading.Thread(target = service_thread)

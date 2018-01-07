@@ -53,19 +53,19 @@ def main():
                 services = ["UDP", "TCP", "Multicast"]
                 if ANNOUNCE == f["frame_type"]:
                     logger.info("Announce frame")
-                    print f
+                    print(f)
                 elif HELLO == f["frame_type"]:
                     logger.info("Hello frame")
-                    print f
+                    print(f)
                 elif QUERY == f["frame_type"]:
                     logger.info("Query %s service '%s' from %s", services[f["service_type"]], f["service_name"], f["source"])
-            except IllegalFrameException, e:
+            except IllegalFrameException as e:
                 print("%s:%d Illegal frame '%s'" % (addr, port, frame))
 
-        except socket.error, e:
-            print 'Expection'
+        except socket.error as e:
+            print('Exception')
             hexdata = binascii.hexlify(data)
-            print 'Data = %s' % hexdata
+            print('Data = %s' % hexdata)
 
 if __name__ == '__main__':
     main()

@@ -27,7 +27,7 @@ def subscription_cb(service_name, host, port, is_subscribed):
     if is_subscribed:
         logger.info("Found service '%s' at %s:%d" % (service_name, host, port))
         _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _sock.sendto("Hello!", (host, port))
+        _sock.sendto(bytearray("Hello!", "utf-8"), (host, port))
     else:
         logger.info("Lost service '%s'" % (service_name))
         _sock.close()

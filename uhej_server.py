@@ -26,7 +26,11 @@ import time
 import threading
 import socket
 import binascii
-import Queue
+import sys
+if sys.version[0] == '2':
+    import Queue
+else:
+    import queue as Queue
 from uhej import *
 import logging
 
@@ -97,7 +101,7 @@ def _comms_thread():
         try:
             data, addr = rx_sock.recvfrom(1024)
             q.put((addr, data))
-        except Exception, e:
+        except Exception as e:
             logger.error("Exception")
             raise e
 
@@ -108,7 +112,7 @@ def _check_query(frame):
         a = announce(service_list)
         try:
             tx_sock.sendto(a, (frame["source"], MCAST_PORT))
-        except IOError, e:
+        except IOError as e:
             logger.warn("Got IOError ", e)
             raise e
     else:
@@ -119,7 +123,7 @@ def _check_query(frame):
                 service["subscribers"].append(frame["source"])
                 try:
                     tx_sock.sendto(a, (frame["source"], MCAST_PORT))
-                except IOError, e:
+                except IOError as e:
                     logger.warn("Got IOError ", e)
                     raise e
 
@@ -149,9 +153,9 @@ def _worker_thread():
                     logger.info("Hello from %s (%s)" % (f["source"], f["name"]))
                 else:
                     logger.info("Unhandled frame type %d" % (f["frame_type"]))
-                    print f
+                    print(f)
 
-            except IllegalFrameException, e:
+            except IllegalFrameException as e:
                 logger.info("%s:%d Illegal frame '%s'" % (addr, port, frame))
 
 def _start_thread(thread):
