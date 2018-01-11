@@ -26,7 +26,11 @@ import time
 import threading
 import socket
 import binascii
-import Queue
+import sys
+if sys.version[0] == '2':
+    import Queue
+else:
+    import queue as Queue
 from uhej import *
 import logging
 
@@ -140,7 +144,7 @@ def _comms_thread():
         try:
             data, addr = rx_sock.recvfrom(1024)
             q.put((addr, data))
-        except Exception, e:
+        except Exception as e:
             logger.error("Exception")
 
 def _worker_thread():
@@ -169,7 +173,7 @@ def _worker_thread():
                     logger.info("Beacon frame")
                     _check_beacon(f)
 
-            except IllegalFrameException, e:
+            except IllegalFrameException as e:
                 logger.info("%s:%d Illegal frame '%s'" % (addr, port, frame))
 
 def _start_thread(thread):
