@@ -1,12 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Query local network for uHej services
 #
 
 import socket
-import threading
 import sys
-from uhej import *
+import threading
+import time
+import uhej
 
 
 def worker_thread():
@@ -19,20 +20,20 @@ def worker_thread():
             addr = addr[0]
             frame = bytearray(data)
             try:
-                f = decode_frame(frame)
+                f = uhej.decode_frame(frame)
                 f["source"] = addr
                 f["port"] = port
                 types = ["UDP", "TCP", "mcast"]
-                if ANNOUNCE == f["frame_type"]:
+                if uhej.ANNOUNCE == f["frame_type"]:
                     for s in f["services"]:
                         key = "%s:%s:%s" % (f["source"], s["port"], s["type"])
-                        if not key in discovery_list:
+                        if key not in discovery_list:
                             print("%16s:%-5d  %-8s %s" % (f["source"], s["port"], types[s["type"]], s["service_name"]))
                             discovery_list[key] = True # Keep track of which hosts we have seen
-            except IllegalFrameException, e:
+            except uhej.IllegalFrameException:
                 pass
-        except socket.error, e:
-            print 'Expection', e
+        except socket.error as e:
+            print(f"Expection {e}")
 
 
 def main():
@@ -48,7 +49,7 @@ def main():
         pass
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-    sock.bind((ANY, MCAST_PORT))
+    sock.bind((ANY, uhej.MCAST_PORT))
 #    sock.bind((MCAST_GRP, MCAST_PORT))
 
     thread = threading.Thread(target = worker_thread)
@@ -61,7 +62,7 @@ def main():
         except:
             host = socket.gethostbyname(socket.gethostname())
         sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(host))
-    sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(MCAST_GRP) + socket.inet_aton(ANY))
+    sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(uhej.MCAST_GRP) + socket.inet_aton(ANY))
 
     run_time_s = 10 # Run query for this many seconds
     query_interval_s = 2 # Send query this often
@@ -70,8 +71,8 @@ def main():
 
     while time.time() - start_time < run_time_s:
         if time.time() - last_query > query_interval_s:
-            f = query(UDP, "*")
-            sock.sendto(f, (MCAST_GRP, MCAST_PORT))
+            f = uhej.query(uhej.UDP, "*")
+            sock.sendto(f, (uhej.MCAST_GRP, uhej.MCAST_PORT))
             last_query = time.time()
         time.sleep(1)
 

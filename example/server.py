@@ -1,13 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 sys.path.append("../")
 import logging
 import time
-import uhej_server
+from uhej import server as uhej_server
 import socket
 import threading
-import os
 
 logger = logging.getLogger()
 
@@ -24,27 +23,27 @@ def log_init(level):
 
 def open_socket(port):
     s = None
-    while s == None:
+    while s is None:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.bind(("", port))
-        except socket.error as e:
+        except socket.error:
             logger.info("Socket in use")
     return s
 
 def service_thread():
     global sock
     while 1:
-        if sock == None:
+        if sock is None:
             time.sleep(1)
         else:
             try:
                 data, addr = sock.recvfrom(1024)
                 port = addr[1]
                 addr = addr[0]
-                logger.info("Got message: '%s' from %s" % (data.decode("utf-8"), addr))
+                logger.info(f"Got message: {data.decode("utf-8")} from {addr}:{port}")
             except socket.error as e:
-                print("sock error"), e
+                print(f"sock error {e}")
 
 
 thread = threading.Thread(target = service_thread)
@@ -52,7 +51,7 @@ thread.daemon = True
 thread.start()
 
 
-log_init(logging.INFO);
+log_init(logging.INFO)
 logger.info("Server starting")
 
 #os.environ['TZ'] = 'UTC'

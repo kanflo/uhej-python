@@ -1,13 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 sys.path.append("../")
 import logging
 import time
-import uhej_client
+from uhej import client as uhej_client
 import socket
-import threading
-import os
 import sys
 
 logger = logging.getLogger()
@@ -33,7 +31,7 @@ def subscription_cb(service_name, host, port, is_subscribed):
         _sock.close()
 
 
-log_init(logging.INFO);
+log_init(logging.INFO)
 logger.info("Client starting")
 
 #os.environ['TZ'] = 'UTC'
@@ -53,7 +51,7 @@ uhej_client.init(subscription_cb, node_id, ip, mac, name)
 
 counter = 0
 while 1:
-    uhej_client.subscribe_udp("test service");
+    uhej_client.subscribe_udp("test service")
     time.sleep(10)
     uhej_client.cancel_udp("test service")
     time.sleep(10)
