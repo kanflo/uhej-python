@@ -22,17 +22,12 @@
  THE SOFTWARE.
 """
 
-import time
-import threading
-import socket
-import binascii
-import sys
-if sys.version[0] == '2':
-    import Queue
-else:
-    import queue as Queue
-from uhej import *
 import logging
+import queue
+import socket
+import threading
+import time
+import uhej
 
 rx_timeout_s = 1
 beacon_timeout_s = 5
@@ -53,16 +48,16 @@ service_list = [] # Array of service dictionaties
 def init(callback, node_id, ip, mac, name):
     global _callback
     _callback = callback
-    print("uHej client '%s on %s:%d" % (name, MCAST_GRP, MCAST_PORT))
+    print("uHej client '%s on %s:%d" % (name, uhej.MCAST_GRP, uhej.MCAST_PORT))
     _sock_init()
     _queue_init()
     _thread_init()
-    f = hello(node_id, ip, mac, name)
-    tx_sock.sendto(f, (MCAST_GRP, MCAST_PORT))
+    f = uhej.hello(node_id, ip, mac, name)
+    tx_sock.sendto(f, (uhej.MCAST_GRP, uhej.MCAST_PORT))
 
 def subscribe_udp(service_name):
     logger.info("Subscribing to UDP service '%s'" % (service_name))
-    service_list.append({'type':UDP, 'name':service_name, 'subscribed':False, 'timestamp':0, 'addr':None, 'port':None})
+    service_list.append({'type':uhej.UDP, 'name':service_name, 'subscribed':False, 'timestamp':0, 'addr':None, 'port':None})
 
 def cancel_udp(service_name):
     for service in service_list:
@@ -87,7 +82,7 @@ def _check_service_announcement(frame):
         type = ann_service["type"]
         port = ann_service["port"]
         service = find_service(name, type)
-        if None != service:
+        if service is not None:
             if not service["subscribed"]:
                 logger.info("Found %s service '%s' at %s:%d" % (services[type], name, addr, port))
                 _callback(name, addr, port, True)
@@ -118,8 +113,8 @@ def _janitor():
     for service in service_list:
         if not service["subscribed"] and time.time() - service["timestamp"] > query_time_s:
             logger.info("Querying %s service '%s'" % (services[service["type"]], service["name"]))
-            f = query(service["type"], service["name"])
-            tx_sock.sendto(f, (MCAST_GRP, MCAST_PORT))
+            f = uhej.query(service["type"], service["name"])
+            tx_sock.sendto(f, (uhej.MCAST_GRP, uhej.MCAST_PORT))
 
 #   TODO, someday when I introduct beacons between a client and the service it subscribes to
 
@@ -145,7 +140,7 @@ def _comms_thread():
             data, addr = rx_sock.recvfrom(1024)
             q.put((addr, data))
         except Exception as e:
-            logger.error("Exception")
+            logger.error(f"Exception {e}")
 
 def _worker_thread():
     global q
@@ -154,26 +149,26 @@ def _worker_thread():
         data = addr = None
         try:
             addr, data = q.get(timeout = rx_timeout_s)
-        except Queue.Empty:
+        except queue.Empty:
             _janitor()
-        if data != None and addr != None:
+        if data is not None and addr is not None:
             port = addr[1]
             addr = addr[0]
             frame = bytearray(data)
             try:
-                f = decode_frame(frame)
+                f = uhej.decode_frame(frame)
                 f["source"] = addr
                 f["port"] = port
-                if ANNOUNCE == f["frame_type"]:
+                if uhej.ANNOUNCE == f["frame_type"]:
                     logger.info("Announce frame from %s:%d" % (f["source"], f["port"]))
                     _check_service_announcement(f)
-                elif HELLO == f["frame_type"]:
+                elif uhej.HELLO == f["frame_type"]:
                     logger.info("Hello frame")
-                elif BEACON == f["frame_type"]:
+                elif uhej.BEACON == f["frame_type"]:
                     logger.info("Beacon frame")
                     _check_beacon(f)
 
-            except IllegalFrameException as e:
+            except uhej.IllegalFrameException:
                 logger.info("%s:%d Illegal frame '%s'" % (addr, port, frame))
 
 def _start_thread(thread):
@@ -187,7 +182,7 @@ def _thread_init():
 
 def _queue_init():
     global q
-    q = Queue.Queue()
+    q = queue.Queue()
 
 def _sock_init():
     global rx_sock
@@ -201,13 +196,13 @@ def _sock_init():
     rx_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32) 
     rx_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
 
-    rx_sock.bind((ANY, MCAST_PORT))
+    rx_sock.bind((ANY, uhej.MCAST_PORT))
     try:
         host = socket.gethostbyname(socket.gethostname())
     except:
         host = socket.gethostbyname(socket.gethostname()+".local")
     rx_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(host))
-    rx_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(MCAST_GRP) + socket.inet_aton(ANY))
+    rx_sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(uhej.MCAST_GRP) + socket.inet_aton(ANY))
 
     tx_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     tx_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)

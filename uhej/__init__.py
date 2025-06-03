@@ -22,10 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import time
-import threading
 import socket
-import binascii
 import logging
 import struct
 
@@ -56,12 +53,12 @@ class IllegalFrameException(Exception):
     pass
 
 # Utility function to convert IP address to 32 bit integer
-def ip2int(addr):                                                               
-    return struct.unpack("!I", socket.inet_aton(addr))[0]                       
+def ip2int(addr):
+    return struct.unpack("!I", socket.inet_aton(addr))[0]
 
 # Utility function to convert 32 bit integer to IP address
-def int2ip(addr):                                                               
-    return socket.inet_ntoa(struct.pack("!I", addr))                            
+def int2ip(addr):
+    return socket.inet_ntoa(struct.pack("!I", addr))
 
 # Decode a received frame as an uhej frame (a byte array)
 # Raises IllegalFrameException if the frame is not a valud uhej frame
@@ -82,7 +79,7 @@ def decode_frame(frame):
             f = _decode_beacon(frame)
         else:
             raise IllegalFrameException
-    except IndexError as e:
+    except IndexError:
         print("Index error")
         raise IllegalFrameException
     return f
@@ -185,7 +182,7 @@ def _find_zero(data, start):
     i = start
     while i < len(data):
         if data[i] == 0:
-            return i;
+            return i
         i += 1
     return -1
 
